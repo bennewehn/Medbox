@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0.22
@@ -9,7 +7,7 @@ services:
       - "1883:1883"      # Standard MQTT Port
       - "9001:9001"      # WebSockets Port (Useful for Web Apps/React)
     volumes:
-      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./config/:/mosquitto/config/
       - ./data:/mosquitto/data
       - ./log:/mosquitto/log
     user: "1883:1883"    # Runs as the internal mosquitto user for security
