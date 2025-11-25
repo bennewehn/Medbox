@@ -47,14 +47,13 @@ class MqttService {
       return;
     }
 
-    const topic = `medbox/${boxId}/command`;
-    const message = JSON.stringify({ type: command, ...payload });
+    const topic = `medbox/${boxId}/${command}`;
 
-    this.client.publish(topic, message, { qos: 1 }, (err) => {
+    this.client.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
       if (err) {
         console.error(`Failed to publish to ${topic}:`, err);
       } else {
-        console.log(`📤 Sent command '${command}' to ${topic}`);
+        console.log(`📤 Sent payload to ${topic}`);
       }
     });
   }

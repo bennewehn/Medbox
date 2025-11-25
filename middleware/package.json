@@ -2,12 +2,14 @@
   "name": "medication-box-middleware",
   "version": "1.0.0",
   "main": "dist/app.js",
-   "scripts": {
+  "scripts": {
     "dev": "ts-node src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js"
   },
   "dependencies": {
+    "firebase": "^12.6.0",
+    "firebase-admin": "^13.6.0",
     "mqtt": "^5.14.1"
   },
   "devDependencies": {

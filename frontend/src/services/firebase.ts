@@ -1,9 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth'
+import { Database, getDatabase } from 'firebase/database';
 import { getFirestore, Firestore } from 'firebase/firestore'; 
 
 let auth: Auth | undefined;
-let db: Firestore | undefined;
+let firestore: Firestore | undefined;
+let db: Database;
 let appId = 'default-app-id';
 let initializationError: Error | null = null;
 
@@ -14,7 +16,8 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL
 };
 
 try {
@@ -26,7 +29,8 @@ try {
   // 2. Initialize
   const app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
+  firestore = getFirestore(app);
+  db = getDatabase(app);
   appId = firebaseConfig.appId || 'default-app-id';
 
 } catch (err: any) {
@@ -34,4 +38,4 @@ try {
   initializationError = err;
 }
 
-export { auth, db, appId, initializationError };
+export { auth, firestore, db, appId, initializationError };

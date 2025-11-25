@@ -6,7 +6,6 @@ export interface Magazine {
   name: string;
   type: string;
   current: number;
-  max: number;
   color: string;
 }
 
