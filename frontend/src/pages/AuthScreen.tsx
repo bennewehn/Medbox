@@ -14,9 +14,9 @@ function AuthScreen({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () 
     setError('');
     try {
       if (isRegistering) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth!, email, password);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth!, email, password);
       }
     } catch (err: any) {
       setError(err.message.replace('Firebase: ', ''));

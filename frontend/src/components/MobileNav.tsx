@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { LayoutDashboard, Calendar, History, Sun, Moon, LogOut } from 'lucide-react';
 
 const MobileNav = ({ 
-  user, 
+//  user, 
   isDark, 
   toggleTheme, 
   onLogout,

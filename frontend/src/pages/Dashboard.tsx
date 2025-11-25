@@ -11,7 +11,7 @@ export default function Dashboard({ user }: { user: User }) {
   const [mqttLog, setMqttLog] = useState<MqttLog | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'magazines'), orderBy('id'));
+    const q = query(collection(db!, 'artifacts', appId, 'users', user.uid, 'magazines'), orderBy('id'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const mags = snapshot.docs.map(d => ({ _id: d.id, ...d.data() } as Magazine));
       if (mags.length === 0) seedMagazines(user.uid);
@@ -27,7 +27,7 @@ export default function Dashboard({ user }: { user: User }) {
       { id: 3, name: 'Night Meds', type: 'Melatonin', current: 25, max: 30, color: 'bg-indigo-500' }
     ];
     for (const mag of defaults) {
-      await addDoc(collection(db, 'artifacts', appId, 'users', uid, 'magazines'), mag);
+      await addDoc(collection(db!, 'artifacts', appId, 'users', uid, 'magazines'), mag);
     }
   };
 
@@ -50,11 +50,11 @@ export default function Dashboard({ user }: { user: User }) {
     setTimeout(() => setMqttLog(null), 4000);
 
     if (magazine.current > 0) {
-      const magRef = doc(db, 'artifacts', appId, 'users', user.uid, 'magazines', magazine._id);
+      const magRef = doc(db!, 'artifacts', appId, 'users', user.uid, 'magazines', magazine._id);
       await updateDoc(magRef, { current: magazine.current - 1 });
     }
 
-    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'events'), {
+    await addDoc(collection(db!, 'artifacts', appId, 'users', user.uid, 'events'), {
       type: 'Manual Dispense',
       magazineName: magazine.name,
       magazineId: magazine.id,

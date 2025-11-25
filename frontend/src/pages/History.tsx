@@ -9,7 +9,7 @@ export default function HistoryPage({ user }: { user: User }) {
   const [events, setEvents] = useState<DispenseEvent[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'events'), orderBy('scheduledAt', 'desc'));
+    const q = query(collection(db!, 'artifacts', appId, 'users', user.uid, 'events'), orderBy('scheduledAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setEvents(snapshot.docs.map(d => ({ _id: d.id, ...d.data() } as DispenseEvent)));
     });
@@ -68,7 +68,7 @@ export default function HistoryPage({ user }: { user: User }) {
                       {isPast ? 'COMPLETED' : 'PENDING'}
                     </span>
                     <button 
-                      onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'events', evt._id))}
+                      onClick={() => deleteDoc(doc(db!, 'artifacts', appId, 'users', user.uid, 'events', evt._id))}
                       className="text-slate-300 hover:text-red-500 transition-colors"
                     >
                       <Trash2 size={16} />

@@ -13,7 +13,7 @@ function SchedulePage({ user }: { user: User }) {
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'magazines'));
+    const q = query(collection(db!, 'artifacts', appId, 'users', user.uid, 'magazines'));
     const unsubscribe = onSnapshot(q, (snap) => {
       setMagazines(snap.docs.map(d => ({ _id: d.id, ...d.data() } as Magazine)));
     });
@@ -35,7 +35,7 @@ function SchedulePage({ user }: { user: User }) {
 
     const magazine = magazines.find(m => m.id.toString() === selectedMag);
 
-    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'events'), {
+    await addDoc(collection(db!, 'artifacts', appId, 'users', user.uid, 'events'), {
       type: 'Scheduled Dispense',
       magazineName: magazine ? magazine.name : 'Unknown',
       magazineId: magazine ? magazine.id : 0,

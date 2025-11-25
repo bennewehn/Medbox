@@ -8,7 +8,7 @@ import { Pill, X, Menu } from 'lucide-react';
 
 export default function Layout({ user, isDark, toggleTheme }: { user: User | null, isDark: boolean, toggleTheme: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const handleLogout = () => signOut(auth);
+  const handleLogout = () => signOut(auth!);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
