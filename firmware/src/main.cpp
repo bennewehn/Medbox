@@ -1,7 +1,9 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include "secrets.h"
+#include "secrets_template.h"
+#include <AccelStepper.h>
+#include <ArduinoJson.h>
 
 const char* ssid     = WIFI_SSID;
 const char* password = WIFI_PASSWORD ;
@@ -16,6 +18,59 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 bool dispenseRequested = false;
+
+AccelStepper stepper1(AccelStepper::FULL4WIRE, 16, 17, 18, 19); // motor 1
+AccelStepper stepper2(AccelStepper::FULL4WIRE, 33, 25, 26, 27); // motor 2
+
+// Infrared sensor pin (adjust if necessary)
+const int IR_PIN = 32;
+
+// Parse amounts from message like: [{"amount": 1}, {"amount":1}]
+int parseAmounts(const String &msg, int amounts[], int maxCount) {
+  StaticJsonDocument<200> doc;
+  DeserializationError err = deserializeJson(doc, msg);
+  if (err) {
+    return 0;
+  }
+  if (!doc.is<JsonArray>()) return 0;
+
+  int i = 0;
+  for (JsonObject obj : doc.as<JsonArray>()) {
+    if (i >= maxCount) break;
+    amounts[i++] = obj["amount"] | 0; // default 0 falls key fehlt
+  }
+  return i;
+}
+
+// Rotate given motor until IR sensor counts targetCount pulses
+void rotateMotorUntilCount(int motor, int targetCount, AccelStepper &stepper) {
+  if (targetCount <= 0) return;
+
+  int count = 0;
+  int lastState = digitalRead(IR_PIN);
+
+  stepper.setSpeed(100);
+  while (count < targetCount) {
+  
+    stepper.runSpeed();
+
+    int state = digitalRead(IR_PIN);
+    // detect falling edge or rising edge depending on sensor wiring
+    if (lastState == HIGH && state == LOW) {
+      count++;
+      // simple debounce / avoid double counting
+      delay(50);
+    }
+
+    static unsigned long lastClient = 0; //TODO: check if this is useful here
+    if (millis() - lastClient > 50) { 
+      client.loop(); lastClient = millis();
+    }
+    lastState = state;
+  }
+  // stop motor
+  stepper.setSpeed(0);
+}
 
 void callback(char* topic, byte* message, unsigned int length) {
   Serial.print("Message arrived on topic: ");
@@ -32,7 +87,27 @@ void callback(char* topic, byte* message, unsigned int length) {
 
   if (String(topic) == "medbox/01/dispense") {
     Serial.println("dispense called");
-    delay(3000);
+    // parse requested amounts for both motors
+    int amounts[2] = {0, 0};
+    int found = parseAmounts(messageTemp, amounts, 2);
+    Serial.print("Parsed amounts: ");
+    for (int i = 0; i < 2; i++) {
+      Serial.print(amounts[i]);
+      if (i == 0) Serial.print(", ");
+    }
+    Serial.println();
+
+    // Execute dispensing: first motor 0, then motor 1, using the single IR sensor
+    if(found <= 2){
+      rotateMotorUntilCount(0, amounts[0], stepper1);
+      rotateMotorUntilCount(1, amounts[1], stepper2);
+    }else{
+      Serial.println("Error: too many amounts specified");
+      return;
+    }
+    Serial.println("dispense done");
+
+    // publish acknowledgement
     client.publish("medbox/01/dispensed", "true");
     Serial.println("ack sent");
   }
@@ -86,6 +161,14 @@ void setup() {
   // Configure the MQTT server and the callback
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
+
+  stepper1.setMaxSpeed(500);
+  stepper1.setAcceleration(100);
+  stepper2.setMaxSpeed(500);
+  stepper2.setAcceleration(100);
+
+  // initialize IR sensor pin
+  pinMode(IR_PIN, INPUT_PULLUP);
 }
 
 void loop() {
