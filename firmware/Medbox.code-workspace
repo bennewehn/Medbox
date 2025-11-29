@@ -4,10 +4,6 @@
 			"path": ".."
 		},
 		{
-			"name": "firmware2",
-			"path": "../firmware2"
-		},
-		{
 			"name": "firmware",
 			"path": "."
 		}
