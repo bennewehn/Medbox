@@ -3,6 +3,8 @@ export interface Magazine {
   id: number; 
   name: string;
   type: string;
-  percentage: number;
+  sensorKey: string;
   color: string;
+  minDist: number; // Distance in mm when FULL
+  maxDist: number; // Distance in mm when EMPTY
 }

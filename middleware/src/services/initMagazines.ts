@@ -2,8 +2,8 @@ import { db } from './firebase';
 import {type Magazine } from '../../../types';
 
 const defaults: Magazine[] = [
-  { id: 1, name: 'Morning Mix', type: 'Multivitamin', percentage: 60, color: 'bg-emerald-500' },
-  { id: 2, name: 'Pain Relief', type: 'Ibuprofen', percentage: 20, color: 'bg-amber-500' }
+  { id: 1, name: 'Morning Mix', type: 'Multivitamin', maxDist: 150, minDist: 30, sensorKey: 'mag1_mm', color: 'bg-emerald-500' },
+  { id: 2, name: 'Pain Relief', type: 'Ibuprofen', maxDist: 150, minDist: 30, sensorKey: 'mag2_mm', color: 'bg-amber-500' }
 ];
 
 export const initializeMagazines = async () => {

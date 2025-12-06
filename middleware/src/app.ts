@@ -1,8 +1,10 @@
 import mqttService from './services/mqttService';
-import { db, rtdb } from './services/firebase';
+import { rtdb } from './services/firebase';
 import { initializeMagazines } from './services/initMagazines';
 import { registerPlanner } from './services/planner';
 import { dispense } from './services/dispense';
+import { handleSensorData } from './services/levelMonitor';
+import { handleStatusUpdate } from './services/statusMonitor';
 
 
 
@@ -17,6 +19,17 @@ registerPlanner();
 
 
 mqttService.connect(MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS);
+
+mqttService.onMessage((topic, msg) => {
+
+    if(topic.includes('/status')){
+      handleStatusUpdate(topic, msg);
+    }
+
+    else if (topic.includes('/levels')){
+      handleSensorData(topic, msg);
+    }
+});
 
 export const startDatabaseListener = () => {
   const ref = rtdb.ref('dispense_commands');

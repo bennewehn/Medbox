@@ -1,12 +1,15 @@
 import mqtt, { MqttClient, IClientOptions } from 'mqtt';
 
+// Define a type for the callback function
+type MessageHandler = (topic: string, message: Buffer) => void;
+
 class MqttService {
   private client: MqttClient | null = null;
   private static instance: MqttService;
+  private messageHandlers: MessageHandler[] = []; // Array to store listeners
 
   private constructor() {}
 
-  // Singleton pattern to ensure only one connection exists
   public static getInstance(): MqttService {
     if (!MqttService.instance) {
       MqttService.instance = new MqttService();
@@ -18,11 +21,11 @@ class MqttService {
     const connectUrl = `mqtt://${host}:${port}`;
 
     const options: IClientOptions = {
-      clean: true, // clean session
-      connectTimeout: 4000, 
+      clean: true,
+      connectTimeout: 7000, 
       username: username,
       password: password,
-      reconnectPeriod: 1000, // Retry every 1s if lost
+      reconnectPeriod: 1000, 
     };
 
     console.log(`Connecting to MQTT Broker at ${connectUrl}...`);
@@ -31,18 +34,34 @@ class MqttService {
 
     this.client.on('connect', () => {
       console.log('✅ MQTT Connected');
-      // Subscribe to topics here if this service also needs to LISTEN
+      
+      // 1. Subscribe to the levels topic
+      this.client?.subscribe('medbox/+/levels'); 
       this.client?.subscribe('medbox/+/events'); 
+      this.client?.subscribe('medbox/+/status'); 
     });
 
     this.client.on('error', (err) => {
       console.error('❌ MQTT Error:', err);
       this.client?.end();
     });
+
+    // 2. Generic Message Handler
+    this.client.on('message', (topic, message) => {
+        // Forward message to all registered handlers
+        this.messageHandlers.forEach(handler => handler(topic, message));
+    });
   }
 
-  public publishAndWaitForAck(boxId: string, command: string, payload: object, ackTopic: string, timeout: number = 15000): Promise<string> {
+  // 3. Allow external files to register a listener
+  public onMessage(handler: MessageHandler) {
+      this.messageHandlers.push(handler);
+  }
+
+   public publishAndWaitForAck(boxId: string, command: string, payload: object, ackTopic: string, timeout: number = 15000): Promise<string> {
+
     return new Promise((resolve, reject) => {
+
         if (!this.client || !this.client.connected) {
             return reject('MQTT Client not connected.');
         }
@@ -55,15 +74,15 @@ class MqttService {
                 resolve(message.toString());
             }
         };
-        
+
         this.client?.subscribe(ackTopic, (err) => {
             if (err) {
                 return reject(`Failed to subscribe to ${ackTopic}`);
             }
-            
-            this.client?.on('message', onMessage);
 
+            this.client?.on('message', onMessage);
             const topic = `medbox/${boxId}/${command}`;
+
             this.client?.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
                 if (err) {
                     this.client?.removeListener('message', onMessage);

@@ -50,7 +50,7 @@ export function registerPlanner() {
                     console.log(`   -> Plan ${doc.id} set to DISPENSING`);
 
                     // --- STEP B: TRIGGER HARDWARE ---
-                    dispense({ amounts: plan.items, timestamp: now.toISOString() }, false);
+                    await dispense({ amounts: plan.items, timestamp: now.toISOString() }, false);
 
                     // --- STEP C: FINALIZE STATUS (Immediate DB Update) ---
                     if (plan.type === 'RECURRING' && plan.recurringDays && plan.timeOfDay) {
