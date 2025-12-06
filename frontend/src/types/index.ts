@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase/firestore'
-
 interface PlanItem {
   magazineId: number | string;
   magazineName: string;
