@@ -122,7 +122,7 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
       <button 
         onClick={() => setIsSettingsOpen(true)}
         disabled={!isBoxOnline}
-        className="absolute top-3 right-3 text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 transition-colors z-20 disabled:opacity-0"
+        className="absolute top-3 right-3 text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 transition-colors z-10 disabled:opacity-0"
       >
         <Settings size={16} />
       </button>

@@ -30,7 +30,7 @@ Adafruit_VL6180X tof2 = Adafruit_VL6180X();
 
 // Timer for publishing sensor data (non-blocking)
 unsigned long lastSensorReadTime = 0;
-const long sensorInterval = 2000; // Publish every 2000ms (2 seconds)
+const long sensorInterval = 4000; // Publish every 2000ms (2 seconds)
 
 const char* status_topic = "medbox/01/status";
 
