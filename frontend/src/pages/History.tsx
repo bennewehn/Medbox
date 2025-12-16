@@ -21,7 +21,6 @@ export interface DispenseEvent {
 
 export default function HistoryPage({ user }: { user: User }) {
   const [events, setEvents] = useState<DispenseEvent[]>([]);
-  // State to track which item is currently being deleted (null = modal closed)
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +38,7 @@ export default function HistoryPage({ user }: { user: User }) {
     } catch (error) {
         console.error("Error deleting history:", error);
     } finally {
-        setDeleteId(null); // Close modal
+        setDeleteId(null);
     }
   };
 
@@ -69,7 +68,6 @@ export default function HistoryPage({ user }: { user: User }) {
                 return (
                   <div key={evt._id} className="p-5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors flex flex-col sm:flex-row gap-4 sm:items-center">
                     
-                    {/* LEFT: Time & Icon */}
                     <div className="flex items-center gap-4 w-full sm:w-48 shrink-0">
                       <div className={`h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center ${
                         evt.type === 'Manual Dispense' 
@@ -88,7 +86,6 @@ export default function HistoryPage({ user }: { user: User }) {
                       </div>
                     </div>
 
-                    {/* MIDDLE: Grouped Chips */}
                     <div className="flex-1 min-w-0">
                       {activeItems.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
@@ -109,7 +106,6 @@ export default function HistoryPage({ user }: { user: User }) {
                       )}
                     </div>
 
-                    {/* RIGHT: Status & Delete */}
                     <div className="flex items-center justify-between sm:justify-end gap-3 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700 w-full sm:w-auto">
                       <span className={`flex items-center gap-1.5 text-[11px] uppercase tracking-wide px-2.5 py-1 rounded-md font-bold ${
                         isError 

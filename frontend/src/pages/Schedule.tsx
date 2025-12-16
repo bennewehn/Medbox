@@ -27,8 +27,6 @@ import {
   Loader2
 } from 'lucide-react';
 
-// --- Types ---
-
 interface PlanItem {
   magazineId: number | string;
   magazineName: string;
@@ -37,12 +35,12 @@ interface PlanItem {
 
 interface Plan {
   id: string;
-  scheduledAt: string;     // ISO String of the NEXT scheduled occurrence
+  scheduledAt: string; 
   items?: PlanItem[];
   magazineName?: string;
   status: string;
   type: 'ONCE' | 'RECURRING';
-  recurringDays?: number[]; // Array of integers 0-6 (Sun-Sat)
+  recurringDays?: number[];
 }
 
 // Helper for days of week
@@ -75,7 +73,7 @@ function SchedulePage({ user }: { user: User }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
 
-  // 1. Fetch Magazines
+  // Fetch Magazines
   useEffect(() => {
     if (!firestore) return;
     const q = query(collection(firestore, 'magazines'));
@@ -85,7 +83,7 @@ function SchedulePage({ user }: { user: User }) {
     return () => unsubscribe();
   }, [user]);
 
-  // 2. Fetch Scheduled Plans
+  // Fetch Scheduled Plans
   useEffect(() => {
     if (!firestore) return;
     const q = query(
@@ -131,18 +129,18 @@ function SchedulePage({ user }: { user: User }) {
 
   const getDayName = (dayIndex: number) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayIndex];
 
-  // Logic to find the next occurrence of a specific time on specific days
+  // find the next occurrence of a specific time on specific days
   const getNextOccurrence = (timeStr: string, allowedDays: number[]) => {
     const now = new Date();
     const [hours, minutes] = timeStr.split(':').map(Number);
     
-    // Check next 7 days
+    // check next 7 days
     for(let i = 0; i < 7; i++) {
         const candidate = new Date(now);
         candidate.setDate(now.getDate() + i);
         candidate.setHours(hours, minutes, 0, 0);
 
-        // If it's today but time passed, skip
+        // ff it is today but time passed: skip
         if (i === 0 && candidate < now) continue;
 
         if (allowedDays.includes(candidate.getDay())) {
@@ -156,7 +154,7 @@ function SchedulePage({ user }: { user: User }) {
     e.preventDefault();
     const selectedIds = Object.keys(selections);
     
-    // 1. Basic Validation
+    // input validation
     if (selectedIds.length === 0) {
         setErrorMsg("Please select at least one medication.");
         return;
@@ -176,12 +174,12 @@ function SchedulePage({ user }: { user: User }) {
     let finalDate: Date;
     const [hours, minutes] = time.split(':').map(Number);
 
-    // 2. Date Calculation & Past Validation
+    // date calculation and past validation
     if (scheduleType === 'ONCE') {
         finalDate = new Date(selectedDate);
         finalDate.setHours(hours, minutes, 0, 0);
         
-        // CHECK: Is the date in the past?
+        // is the date in the past?
         if (finalDate < new Date()) {
              setErrorMsg("You cannot schedule a dispense in the past.");
              setLoading(false);
@@ -189,7 +187,7 @@ function SchedulePage({ user }: { user: User }) {
         }
 
     } else {
-        // Recurring logic
+        // recurring logic
         const nextDate = getNextOccurrence(time, selectedDays);
         if (!nextDate) {
             setErrorMsg("Could not calculate next occurrence.");
@@ -199,7 +197,7 @@ function SchedulePage({ user }: { user: User }) {
         finalDate = nextDate;
     }
 
-    // 3. Prepare Items
+    // prepare Items
     const itemsToDispense: PlanItem[] = selectedIds.map(id => {
         const mag = magazines.find(m => m.id.toString() === id);
         return {
@@ -209,7 +207,7 @@ function SchedulePage({ user }: { user: User }) {
         };
     });
 
-    // 4. Save to Firestore
+    // saave to Firestore
     try {
         await addDoc(collection(firestore!, 'plans'), {
           type: scheduleType,
@@ -250,13 +248,13 @@ function SchedulePage({ user }: { user: User }) {
   return (
     <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
       
-      {/* LEFT COLUMN: The Scheduler Form */}
+      {/* scheduler form */}
       <div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">New Schedule</h2>
         
         <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
           
-          {/* TABS: Schedule Type */}
+          {/* schedule type tabs */}
           <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl mb-6">
             <button
                 type="button"
@@ -284,7 +282,7 @@ function SchedulePage({ user }: { user: User }) {
 
           <form onSubmit={handlePlan} className="space-y-6">
             
-            {/* Medications List */}
+            {/* medications list */}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                 Select Medications
@@ -330,7 +328,6 @@ function SchedulePage({ user }: { user: User }) {
             </div>
 
             <div className="grid grid-cols-1 gap-6">
-                {/* DATE / DAYS SELECTION */}
                 {scheduleType === 'ONCE' ? (
                     <div>
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date</label>
@@ -375,7 +372,7 @@ function SchedulePage({ user }: { user: User }) {
                     </div>
                 )}
 
-                {/* TIME SELECTION */}
+                {/* time selection */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Time</label>
                     <div className="relative">
@@ -419,7 +416,7 @@ function SchedulePage({ user }: { user: User }) {
         </div>
       </div>
 
-    {/* RIGHT COLUMN: The View List */}
+    {/* view list */}
       <div className="flex flex-col h-full">
          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Upcoming Schedule</h2>
          
@@ -438,7 +435,6 @@ function SchedulePage({ user }: { user: User }) {
                     return (
                         <div key={plan.id} className={`bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border relative group transition-colors ${isDispensing ? 'border-amber-300 dark:border-amber-700 ring-2 ring-amber-100 dark:ring-amber-900/30' : 'border-slate-100 dark:border-slate-700'}`}>
                             
-                            {/* Header: Type & Time */}
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${
@@ -467,10 +463,8 @@ function SchedulePage({ user }: { user: User }) {
                                 </div>
                             </div>
                             
-                            {/* Divider */}
                             <div className="h-px bg-slate-100 dark:bg-slate-700 mb-3" />
 
-                            {/* Body: Items */}
                             <div className="space-y-2">
                                 {plan.items?.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center text-sm">
@@ -485,7 +479,6 @@ function SchedulePage({ user }: { user: User }) {
                                 ))}
                             </div>
 
-                            {/* Status or Delete Action */}
                             {isDispensing ? (
                                 <div className="absolute top-4 right-4">
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 animate-pulse border border-amber-200 dark:border-amber-800">

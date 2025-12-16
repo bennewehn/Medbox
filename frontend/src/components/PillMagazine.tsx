@@ -8,25 +8,25 @@ import { db, firestore } from "../services/firebase";
 interface PillMagazineProps {
   magazine: Magazine;
   boxId: string;
-  isBoxOnline: boolean; // <--- NEW PROP
+  isBoxOnline: boolean;
   onDispense: (magazine: Magazine) => Promise<string>;
 }
 
 export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense }: PillMagazineProps) {
   const [activeCommandId, setActiveCommandId] = useState<string | null>(null);
   
-  // --- LIVE DATA STATES ---
+  // live data states
   const [currentDistance, setCurrentDistance] = useState<number>(0);
   const [calculatedPercentage, setCalculatedPercentage] = useState<number>(0);
 
-  // --- SETTINGS STATES ---
+  // settings states
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [config, setConfig] = useState({
     minDist: magazine.minDist || 30,
     maxDist: magazine.maxDist || 150
   });
 
-  // 1. Listen for Dispense Command Status
+  // listen for dispense command status
   useEffect(() => {
     if (!activeCommandId) return;
     const commandRef = ref(db, `dispense_commands/${activeCommandId}`);
@@ -36,9 +36,8 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
     return () => unsubscribe();
   }, [activeCommandId]);
 
-  // 2. Listen for LIVE Sensor Data
+  // liisten for live sensor data
   useEffect(() => {
-    // Optimization: Don't listen if box is offline
     if (!isBoxOnline) return; 
 
     const sensorRef = ref(db, `boxes/${boxId}/levels`);
@@ -54,7 +53,7 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
     return () => unsubscribe();
   }, [boxId, magazine.sensorKey, isBoxOnline]);
 
-  // 3. Calculate Percentage
+  // calculate percentage
   useEffect(() => {
     const { minDist, maxDist } = config;
     if (maxDist <= minDist) {
@@ -66,7 +65,7 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
     setCalculatedPercentage(Math.round(pct));
   }, [currentDistance, config]);
 
-  // 4. Save Calibration
+  // save calibration
   const handleSaveSettings = async () => {
     try {
         const magRef = doc(firestore!, 'magazines', magazine._id!);
@@ -82,14 +81,12 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
 
   const isLow = calculatedPercentage < 20;
   const isBusy = !!activeCommandId;
-  const isDisabled = isBusy || !isBoxOnline; // Disable if busy OR offline
+  const isDisabled = isBusy || !isBoxOnline;
 
-  // --- RENDER: SETTINGS MODE ---
+  // render settings 
   if (isSettingsOpen) {
     return (
-        // ... (Keep Settings Render Code exactly as before) ...
         <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 min-h-[320px] flex flex-col justify-between relative">
-            {/* ... content ... */}
             <div className="flex justify-between items-center mb-2">
                 <h3 className="font-bold text-slate-700 dark:text-slate-200">Calibration</h3>
                 <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-red-500"><X size={20} /></button>
@@ -113,7 +110,6 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
     );
   }
 
-  // --- RENDER: NORMAL MODE ---
   return (
     <div className={`bg-white dark:bg-slate-800 p-5 pb-6 rounded-2xl shadow-sm border 
                      ${isBoxOnline ? 'border-slate-100 dark:border-slate-700' : 'border-red-100 dark:border-red-900/30 bg-slate-50 dark:bg-slate-800/50'} 
@@ -141,7 +137,6 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
         </div>
       </div>
 
-      {/* Pill Graphic - Grayscale if offline */}
       <div className={`relative w-14 h-36 bg-slate-100 dark:bg-slate-700 rounded-full border-4 border-white dark:border-slate-600 shadow-inner overflow-hidden mb-5 z-10 mt-auto ${!isBoxOnline ? 'opacity-40 grayscale' : ''}`}>
         <div
           className={`absolute bottom-0 w-full transition-all duration-1000 ${magazine.color} ${isLow && isBoxOnline ? 'animate-pulse' : ''}`}
@@ -151,7 +146,7 @@ export default function PillMagazine({ magazine, boxId, isBoxOnline, onDispense 
         </div>
       </div>
 
-      {/* Action Button */}
+      {/* action button */}
       <button
         onClick={async () => setActiveCommandId(await onDispense(magazine))}
         disabled={isDisabled}

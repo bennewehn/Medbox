@@ -22,7 +22,7 @@ export const SystemError = ({ error }: { error: Error }) => (
         </div>
 
         <div className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
-          This usually happens when the Firebase configuration is invalid, the API key is expired, or there is a network restriction blocking the connection.
+          Check the network connection.
         </div>
 
         <button 

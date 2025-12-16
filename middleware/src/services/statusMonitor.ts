@@ -8,7 +8,7 @@ export const handleStatusUpdate = async (topic: string, message: Buffer) => {
         const boxId = topicMatch[1];
         const status = message.toString(); // "online" or "offline"
         
-        console.log(`🔌 Box ${boxId} is now ${status.toUpperCase()}`);
+        console.log(`Box ${boxId} is now ${status.toUpperCase()}`);
 
         try {
             // Save to Firebase: boxes/01/status

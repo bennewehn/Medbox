@@ -14,7 +14,6 @@ export default function Layout({ user, isDark, toggleTheme }: { user: User | nul
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
       <Sidebar user={user} isDark={isDark} toggleTheme={toggleTheme} onLogout={handleLogout} />
       
-      {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-30">
         <div className="flex items-center gap-2">
           <div className="bg-cyan-600 p-1.5 rounded-lg">

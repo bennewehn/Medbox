@@ -1,5 +1,5 @@
-import mqttService from './mqttService'
-import {db} from "./firebase"
+import mqttService from './mqttService';
+import { db } from './firebase';
 
 interface PlanItem {
   magazineId: number;
@@ -12,22 +12,33 @@ export interface Plan{
   timestamp: string;
 }
 
-interface DispenseHistoryItem{
-    timestamp: number; 
-    amounts: PlanItem[];
-    status: 'COMPLETED' | 'ERROR';
-    type: 'Manual Dispense' | 'Scheduled Dispense';
+interface DispenseHistoryItem {
+    timestamp: number;
+    amounts: any;
+    status: 'COMPLETED' | 'ERROR' | 'BUSY';
+    type: string;
 }
 
-export async function dispense(plan : Plan, manual: boolean = true) {
-    const ack = await mqttService.publishAndWaitForAck("01", "dispense", plan, "medbox/01/dispensed");
-    console.log(`💊 DISPENSING HARDWARE: ${JSON.stringify(plan)}`);
-    console.log("Dispensing successful:", ack);
-    const item : DispenseHistoryItem = {
+export async function dispense(plan: Plan, manual: boolean = true) {
+    console.log(`STARTING DISPENSE: ${JSON.stringify(plan)}`);
+
+    const success = await mqttService.sendDispenseCommand("01", plan);
+    
+    console.log("Dispense result:", success ? "SUCCESS" : "FAILED");
+
+    // save history
+    const item: DispenseHistoryItem = {
         timestamp: Date.now(),
         amounts: plan.amounts,
-        status: ack? 'COMPLETED' : 'ERROR',
-        type: manual? 'Manual Dispense' : 'Scheduled Dispense'
+        status: success ? 'COMPLETED' : 'ERROR',
+        type: manual ? 'Manual Dispense' : 'Scheduled Dispense'
     };
-    db.collection('history').add(item);
+
+    try {
+        await db.collection('history').add(item);
+        console.log("History saved.");
+    } catch (error) {
+        console.error("Failed to save history:", error);
+    }
 }
+

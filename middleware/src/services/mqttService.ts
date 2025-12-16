@@ -5,7 +5,11 @@ type MessageHandler = (topic: string, message: Buffer) => void;
 class MqttService {
   private client: MqttClient | null = null;
   private static instance: MqttService;
-  private messageHandlers: MessageHandler[] = []; 
+  private messageHandlers: MessageHandler[] = [];
+
+  private dispenseResolver: ((success: boolean) => void) | null = null;
+  private isDispensing: boolean = false;
+  private dispenseTimeout: NodeJS.Timeout | null = null;
 
   private constructor() {}
 
@@ -18,90 +22,97 @@ class MqttService {
 
   public connect(host: string, port: number, username?: string, password?: string): void {
     const connectUrl = `mqtt://${host}:${port}`;
-
-    const options: IClientOptions = {
-      clean: true,
-      connectTimeout: 7000, 
-      username: username,
-      password: password,
-      reconnectPeriod: 1000, 
-    };
-
     console.log(`Connecting to MQTT Broker at ${connectUrl}...`);
     
-    this.client = mqtt.connect(connectUrl, options);
+    this.client = mqtt.connect(connectUrl, {
+      clean: true,
+      connectTimeout: 7000,
+      username,
+      password,
+      reconnectPeriod: 1000,
+    });
 
     this.client.on('connect', () => {
       console.log('✅ MQTT Connected');
       
-      // --- FIX 1: Subscribe Globally ---
-      // Subscribe to ALL potential feedback topics here once.
-      // This prevents the "Unsubscribe Race Condition".
       this.client?.subscribe('medbox/+/levels'); 
       this.client?.subscribe('medbox/+/events'); 
       this.client?.subscribe('medbox/+/status'); 
-      this.client?.subscribe('medbox/+/dispensed'); // <--- CRITICAL ADDITION
+      this.client?.subscribe('medbox/+/dispensed'); 
     });
 
     this.client.on('error', (err) => {
       console.error('❌ MQTT Error:', err);
-      this.client?.end();
     });
 
-    // Global Message Handler
     this.client.on('message', (topic, message) => {
-        this.messageHandlers.forEach(handler => handler(topic, message));
+      const msgStr = message.toString();
+
+      if (topic.endsWith('/dispensed')) {
+        this.handleDispenseAck(msgStr);
+      }
+
+      this.messageHandlers.forEach(handler => handler(topic, message));
+    });
+  }
+
+  private handleDispenseAck(message: string) {
+    if (this.dispenseResolver) {
+        console.log(`📨 Received Dispense ACK: ${message}`);
+        
+        const isSuccess = message.includes('true') || message.includes('success');
+
+        this.dispenseResolver(isSuccess);
+        this.cleanupDispense();
+    }
+  }
+
+  private cleanupDispense() {
+    this.dispenseResolver = null;
+    this.isDispensing = false;
+    if (this.dispenseTimeout) {
+        clearTimeout(this.dispenseTimeout);
+        this.dispenseTimeout = null;
+    }
+  }
+
+  public async sendDispenseCommand(boxId: string, plan: object): Promise<boolean> {
+    if (!this.client || !this.client.connected) {
+        console.error("Cannot dispense: MQTT not connected");
+        return false;
+    }
+
+    if (this.isDispensing) {
+        console.warn("BUSY: Dispense already in progress. Ignoring new command.");
+        return false; 
+    }
+
+    return new Promise((resolve) => {
+        this.isDispensing = true;
+        this.dispenseResolver = resolve;
+
+        const topic = `medbox/${boxId}/dispense`;
+        
+        this.dispenseTimeout = setTimeout(() => {
+            console.error("Dispense Timed Out (No ACK received)");
+            if (this.dispenseResolver) resolve(false); 
+            this.cleanupDispense();
+        }, 30000);
+
+        this.client?.publish(topic, JSON.stringify(plan), { qos: 1 }, (err) => {
+            if (err) {
+                console.error("Failed to publish dispense command");
+                resolve(false);
+                this.cleanupDispense();
+            } else {
+                console.log(`Command Sent to ${topic}, waiting for ACK...`);
+            }
+        });
     });
   }
 
   public onMessage(handler: MessageHandler) {
       this.messageHandlers.push(handler);
-  }
-
-   public publishAndWaitForAck(boxId: string, command: string, payload: object, ackTopic: string, timeout: number = 30000): Promise<string> {
-    return new Promise((resolve, reject) => {
-
-        if (!this.client || !this.client.connected) {
-            return reject('MQTT Client not connected.');
-        }
-
-        // --- FIX 2: No Subscribe/Unsubscribe here ---
-        // We assume we are already subscribed globally.
-        // We simply attach a TEMPORARY listener for the specific Ack.
-
-        const onMessage = (topic: string, message: Buffer) => {
-            if (topic === ackTopic) {
-                // Success! Clean up this specific listener
-                this.client?.removeListener('message', onMessage);
-                resolve(message.toString());
-            }
-        };
-
-        // Attach the listener
-        this.client.on('message', onMessage);
-
-        const topic = `medbox/${boxId}/${command}`;
-
-        // Publish the command
-        this.client.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
-            if (err) {
-                // If send fails, clean up immediately
-                this.client?.removeListener('message', onMessage);
-                reject(`Failed to publish to ${topic}: ${err}`);
-            } else {
-                console.log(`📤 Sent payload to ${topic}, waiting for ack on ${ackTopic}`);
-            }
-        });
-
-        // Timeout Logic
-        setTimeout(() => {
-            // Check if the listener is still attached (meaning we haven't resolved yet)
-            // Note: In a perfect world, we'd check if it's still there, 
-            // but removeListener is safe to call even if already removed.
-            this.client?.removeListener('message', onMessage);
-            reject('Acknowledgment timed out.');
-        }, timeout);
-    });
   }
 }
 

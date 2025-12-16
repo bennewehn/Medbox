@@ -21,12 +21,10 @@ const firebaseConfig = {
 };
 
 try {
-  // 1. Check for API Key specifically
   if (!firebaseConfig.apiKey) {
      throw new Error("Firebase API Key is missing. Check your .env file.");
   }
 
-  // 2. Initialize
   const app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   firestore = getFirestore(app);

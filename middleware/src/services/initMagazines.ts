@@ -10,15 +10,14 @@ export const initializeMagazines = async () => {
   try {
     const collectionRef = db.collection('magazines');
     
-    // 1. Check if ANY document exists
     const snapshot = await collectionRef.limit(1).get();
 
     if (!snapshot.empty) {
-      console.log('✔ Magazines already initialized.');
+      console.log('Magazines already initialized.');
       return;
     }
 
-    console.log('Magazines collection empty. Seeding defaults...');
+    console.log('Magazines collection empty. Adding defaults...');
 
     const batch = db.batch();
 
@@ -28,9 +27,9 @@ export const initializeMagazines = async () => {
     });
 
     await batch.commit();
-    console.log('✔ Default magazines added to Firestore.');
+    console.log('Default magazines added to Firestore.');
 
   } catch (error) {
-    console.error('✘ Error initializing magazines:', error);
+    console.error('Error initializing magazines:', error);
   }
 };
